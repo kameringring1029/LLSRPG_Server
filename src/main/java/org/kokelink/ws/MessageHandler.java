@@ -25,7 +25,32 @@ public class MessageHandler extends TextWebSocketHandler {
     }
     @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) {
-        // メッセージを受け取ったら送信元以外にメッセージを送る.
+        // メッセージを受け取ったらペアにメッセージを送る.
+
+        System.out.println("recv "+ message +" from user :"+session.getId());
+        
+        int pairSessionId;
+        
+        // セッションを確立した順番にペア設定
+        if(Integer.parseInt(session.getId())%2 == 0) {
+        	pairSessionId = Integer.parseInt(session.getId()) + 1;
+        }else {
+        	pairSessionId = Integer.parseInt(session.getId()) - 1;        	
+        }
+
+        try{
+        	if(users.size() > 1) {
+                users.get(pairSessionId).sendMessage(message);
+                System.out.println("send "+message+" to "+pairSessionId);       		
+        	}
+
+        }
+        catch (IOException ex){
+            System.out.println(ex.getLocalizedMessage());
+        }
+        
+        
+        /* 自分以外のすべてのユーザにブロードキャスト
         users.stream()
                 .filter(user -> !user.getId().equals(session.getId()))
                 .forEach(user -> {
@@ -37,10 +62,14 @@ public class MessageHandler extends TextWebSocketHandler {
                         System.out.println(ex.getLocalizedMessage());
                     }
                 });
+                */
     }
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         // 接続が切れたら配列から削除.
+
+        System.out.println("logout user :"+session.getId());
+        
         users.stream()
                 .filter(user -> user.getId().equals(session.getId()))
                 .findFirst()
